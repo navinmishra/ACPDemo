@@ -1,1 +1,1 @@
-{ "framework": "nextjs", "buildCommand": "cd ../.. && pnpm --filter acp-agent build", "installCommand": "cd ../.. && pnpm install" }
+{"framework":"nextjs","buildCommand":"cd ../.. && pnpm --filter acp-agent build","installCommand":"cd ../.. && pnpm install","env":{"ANTHROPIC_API_KEY":{"value":"@anthropic-api-key"},"MERCHANT_API_URL":{"value":"@merchant-api-url"},"MERCHANT_API_KEY":{"value":"@merchant-api-key"}}}

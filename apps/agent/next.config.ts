@@ -1,3 +1,3 @@
-import type { NextConfig } from "next";
-const config: NextConfig = { transpilePackages: ["@acp-demo/types"] };
+import type{NextConfig}from"next";
+const config:NextConfig={};
 export default config;

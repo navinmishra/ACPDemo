@@ -1,9 +1,2 @@
-export function verifyBearer(req: Request): boolean {
-  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "").trim();
-  return token === (process.env.ACP_API_KEY ?? "");
-}
-export async function signWebhook(payload: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(process.env.ACP_WEBHOOK_SECRET ?? ""), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
-  return Buffer.from(sig).toString("base64");
-}
+export function verifyBearer(req:Request):boolean{const auth=req.headers.get("authorization")??"";const token=auth.replace("Bearer ","").trim();return token===(process.env.ACP_API_KEY??"");}
+export async function signWebhook(payload:string):Promise<string>{const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(process.env.ACP_WEBHOOK_SECRET??""),{name:"HMAC",hash:"SHA-256"},false,["sign"]);const sig=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(payload));return Buffer.from(sig).toString("base64");}
