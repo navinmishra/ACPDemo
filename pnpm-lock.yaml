@@ -23,6 +23,9 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^0.0.50
         version: 0.0.50(zod@3.25.76)
+      '@vercel/analytics':
+        specifier: ^2.0.1
+        version: 2.0.1(next@14.2.5(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(svelte@5.55.5)(vue@3.5.33(typescript@5.9.3))
       ai:
         specifier: ^3.3.0
         version: 3.4.33(react@18.3.1)(sswr@2.2.0(svelte@5.55.5))(svelte@5.55.5)(vue@3.5.33(typescript@5.9.3))(zod@3.25.76)

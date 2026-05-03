@@ -38,7 +38,6 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - name: Deploy agent
-        working-directory: apps/agent
         run: |
           npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
