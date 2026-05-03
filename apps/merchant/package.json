@@ -9,8 +9,9 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "next": "14.2.5",
-        "@acp-demo/types": "workspace:*"
+        "@acp-demo/types": "workspace:*",
+        "@vercel/analytics": "^2.0.1",
+        "next": "14.2.5"
     },
     "devDependencies": {
         "@types/node": "^20",
