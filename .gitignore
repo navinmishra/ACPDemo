@@ -3,5 +3,6 @@ node_modules
 .env
 .env.local
 .vercel
+.history
 dist
 *.tsbuildinfo

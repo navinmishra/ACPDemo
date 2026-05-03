@@ -1,1 +1,5 @@
-{"framework":"nextjs","buildCommand":"cd ../.. && pnpm --filter acp-merchant build","installCommand":"cd ../.. && pnpm install","env":{"ACP_API_KEY":{"value":"@acp-api-key"},"ACP_WEBHOOK_SECRET":{"value":"@acp-webhook-secret"},"OPENAI_WEBHOOK_URL":{"value":"@openai-webhook-url"}}}
+{
+  "framework": "nextjs",
+  "buildCommand": "pnpm --filter acp-merchant build",
+  "installCommand": "pnpm install"
+}
