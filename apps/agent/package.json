@@ -1,0 +1,8 @@
+{
+  "name": "acp-agent",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "next dev -p 3000", "build": "next build", "start": "next start", "lint": "next lint" },
+  "dependencies": { "next": "14.2.5", "ai": "^3.3.0", "@ai-sdk/anthropic": "^0.0.50", "zod": "^3.23.0", "@acp-demo/types": "workspace:*" },
+  "devDependencies": { "@types/node": "^20", "@types/react": "^18", "@types/react-dom": "^18", "typescript": "^5.5.0" }
+}
