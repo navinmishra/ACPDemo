@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth";
 import { createSession } from "@/lib/acp";
+import { withLogging } from "@/lib/logger";
 
-export async function POST(req: Request) {
+async function handler(req: Request) {
   if (!verifyBearer(req)) return NextResponse.json({ type: "invalid_request", code: "unauthorized", message: "Invalid API key" }, { status: 401 });
   try {
     const body = await req.json();
@@ -13,3 +14,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ type: "invalid_request", code: "request_not_idempotent", message: e instanceof Error ? e.message : "Error" }, { status: 422 });
   }
 }
+
+export const POST = withLogging(handler, "POST", "/api/checkout_sessions");

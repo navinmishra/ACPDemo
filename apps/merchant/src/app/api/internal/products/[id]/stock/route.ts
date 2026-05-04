@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { increaseStock, deductStock, getStock } from "@/lib/stock";
+import { withLogging } from "@/lib/logger";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+async function handler(req: Request, { params }: { params: Record<string, string> }) {
   try {
     const { delta } = await req.json();
     const amount = Math.round(Number(delta));
@@ -19,3 +20,5 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 422 });
   }
 }
+
+export const POST = withLogging(handler, "POST", "/api/internal/products/[id]/stock");

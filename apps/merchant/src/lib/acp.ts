@@ -3,6 +3,7 @@ import { store } from "./store";
 import { getProduct } from "./products";
 import { signWebhook } from "./auth";
 import { getStock, deductStock } from "./stock";
+import { log } from "./logger";
 
 const TAX = 0.0875;
 
@@ -62,7 +63,16 @@ export async function createSession(req: CreateSessionRequest): Promise<Checkout
     messages: [], links: [{ type: "terms_of_use", url: "https://shop.example.com/terms" }],
     payment_provider: { provider: "stripe", supported_payment_methods: ["card"] },
   };
-  return store.set(s.id, s);
+  await store.set(s.id, s);
+  const total = s.totals.find((t) => t.type === "total");
+  log("info", "session_created", {
+    sessionId: s.id,
+    status: s.status,
+    itemCount: s.line_items.length,
+    items: s.line_items.map((l) => ({ id: l.item.id, qty: l.item.quantity })),
+    totalCents: total?.amount,
+  });
+  return s;
 }
 
 export async function updateSession(id: string, req: UpdateSessionRequest): Promise<CheckoutSession> {
@@ -78,7 +88,14 @@ export async function updateSession(id: string, req: UpdateSessionRequest): Prom
   const sel = FO.find((o) => o.id === s.fulfillment_option_id);
   s.totals = totals(s.line_items, sel?.total ?? 0);
   s.status = s.fulfillment_address ? "ready_for_payment" : "not_ready_for_payment";
-  return store.set(id, s);
+  await store.set(id, s);
+  log("info", "session_updated", {
+    sessionId: id,
+    status: s.status,
+    fulfillmentOptionId: s.fulfillment_option_id,
+    hasAddress: !!s.fulfillment_address,
+  });
+  return s;
 }
 
 export async function completeSession(id: string, req: CompleteSessionRequest): Promise<CheckoutSession> {
@@ -92,6 +109,14 @@ export async function completeSession(id: string, req: CompleteSessionRequest): 
   s.buyer = req.buyer ?? s.buyer;
   s.order = { id: uid("ord"), checkout_session_id: id, permalink_url: "https://shop.example.com/orders/" + id };
   await store.set(id, s);
+  const total = s.totals.find((t) => t.type === "total");
+  log("info", "session_completed", {
+    sessionId: id,
+    orderId: s.order!.id,
+    totalCents: total?.amount,
+    fulfillmentOptionId: s.fulfillment_option_id,
+    itemCount: s.line_items.length,
+  });
   void emitWebhook(s);
   return s;
 }
@@ -101,7 +126,9 @@ export async function cancelSession(id: string): Promise<CheckoutSession> {
   if (!s) throw new Error("Session not found");
   if (s.status === "completed" || s.status === "canceled") throw new Error("Cannot cancel");
   s.status = "canceled";
-  return store.set(id, s);
+  await store.set(id, s);
+  log("warn", "session_canceled", { sessionId: id });
+  return s;
 }
 
 async function emitWebhook(s: CheckoutSession) {
