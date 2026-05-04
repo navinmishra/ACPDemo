@@ -13,6 +13,7 @@
     "dependencies": {
         "@acp-demo/types": "workspace:*",
         "@vercel/analytics": "^2.0.1",
+        "@upstash/redis": "^1.34.0",
         "next": "14.2.5",
         "react": "^18.3.1",
         "react-dom": "^18.3.1"

@@ -1,5 +1,6 @@
 import { CATALOG } from "@/lib/catalog";
 import { store } from "@/lib/store";
+import { getAllStocks } from "@/lib/stock";
 import SessionsPanel from "@/components/SessionsPanel";
 import "./globals.css";
 
@@ -21,15 +22,16 @@ function stockClass(n: number) {
   return "stock stock-crit";
 }
 
-export default function DashboardPage() {
-  const sessions  = store.getAll();
+export default async function DashboardPage() {
+  const [sessions, stocks] = await Promise.all([store.getAll(), getAllStocks()]);
+
   const active    = sessions.filter((s) => !["completed", "canceled"].includes(s.status));
   const completed = sessions.filter((s) => s.status === "completed");
   const revenue   = completed.reduce((sum, s) => {
     const t = s.totals.find((t) => t.type === "total");
     return sum + (t?.amount ?? 0);
   }, 0);
-  const totalStock = CATALOG.reduce((sum, p) => sum + p.stock, 0);
+  const totalStock = Object.values(stocks).reduce((sum, n) => sum + n, 0);
 
   return (
     <div className="shell">
@@ -92,7 +94,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="product-right">
                     <span className="product-price">{fmt(p.price)}</span>
-                    <span className={stockClass(p.stock)}>stock: {p.stock}</span>
+                    <span className={stockClass(stocks[p.id] ?? 0)}>stock: {stocks[p.id] ?? 0}</span>
                   </div>
                 </div>
               ))}

@@ -1,2 +1,14 @@
-import{NextResponse}from"next/server";import{verifyBearer}from"@/lib/auth";import{cancelSession}from"@/lib/acp";
-export async function POST(req:Request,{params}:{params:{id:string}}){if(!verifyBearer(req))return NextResponse.json({error:"Unauthorized"},{status:401});try{const s=cancelSession(params.id);return NextResponse.json(s);}catch(e:unknown){const msg=e instanceof Error?e.message:"Error";return NextResponse.json({error:msg},{status:msg.includes("cancel")?405:404});}}
+import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth";
+import { cancelSession } from "@/lib/acp";
+
+export async function POST(req: Request, { params }: { params: { id: string } }) {
+  if (!verifyBearer(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const s = await cancelSession(params.id);
+    return NextResponse.json(s);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Error";
+    return NextResponse.json({ error: msg }, { status: msg.includes("cancel") ? 405 : 404 });
+  }
+}
