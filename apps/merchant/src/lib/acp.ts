@@ -1,6 +1,6 @@
 import type { CheckoutSession, CreateSessionRequest, UpdateSessionRequest, CompleteSessionRequest, FulfillmentOption, Total, LineItem } from "@acp-demo/types";
 import { store } from "./store";
-import { findProduct } from "./catalog";
+import { getProduct } from "./products";
 import { signWebhook } from "./auth";
 import { getStock, deductStock } from "./stock";
 
@@ -44,12 +44,12 @@ export async function createSession(req: CreateSessionRequest): Promise<Checkout
     }
   }
 
-  const li: LineItem[] = req.items.map((itm, i) => {
-    const p = findProduct(itm.id);
+  const li: LineItem[] = await Promise.all(req.items.map(async (itm, i) => {
+    const p = await getProduct(itm.id);
     if (!p) throw new Error("Product not found: " + itm.id);
     const base = p.price * itm.quantity, tax = Math.round(base * TAX);
     return { id: "li_" + i, item: { ...itm, name: p.name }, base_amount: base, discount: 0, subtotal: base, tax, total: base + tax };
-  });
+  }));
 
   const sel = req.fulfillment_address ? FO[0] : undefined;
   const s: CheckoutSession = {

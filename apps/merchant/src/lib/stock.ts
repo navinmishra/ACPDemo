@@ -40,6 +40,23 @@ export async function deductStock(id: string, quantity: number): Promise<void> {
   await r.decrby(SK(id), quantity);
 }
 
+export async function setStock(id: string, quantity: number): Promise<void> {
+  if (!USE_REDIS) { mem.set(id, quantity); return; }
+  const r = await redis();
+  await r.set(SK(id), quantity);
+}
+
+export async function increaseStock(id: string, quantity: number): Promise<number> {
+  if (!USE_REDIS) {
+    const next = (mem.get(id) ?? 0) + quantity;
+    mem.set(id, next);
+    return next;
+  }
+  await getStock(id); // ensure initialized before incrementing
+  const r = await redis();
+  return (await r.incrby(SK(id), quantity)) as number;
+}
+
 export async function getAllStocks(): Promise<Record<string, number>> {
   const entries = await Promise.all(CATALOG.map(async (p) => [p.id, await getStock(p.id)] as const));
   return Object.fromEntries(entries);
