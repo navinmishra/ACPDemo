@@ -1,8 +1,8 @@
 /**
- * ACP MCP client — AI SDK experimental_createMCPClient binding
+ * ACP MCP client — @ai-sdk/mcp binding
  *
- * Transport: custom HttpMcpTransport over stateless JSON-RPC POST
- *   (AI SDK 4.3.19 only ships SSE built-in; our merchant endpoint is Streamable HTTP)
+ * Transport: native type:'http' (Streamable HTTP / stateless JSON-RPC POST)
+ *   @ai-sdk/mcp ships built-in HTTP transport, so no custom class is needed.
  *
  * Meta injection: each tool's execute is wrapped to auto-populate the ACP
  *   protocol headers (api_version, idempotency_key, request_id) so Claude
@@ -13,7 +13,8 @@
  *   // pass tools to streamText, call close() in onFinish
  */
 
-import { experimental_createMCPClient, tool, type Tool, type ToolExecutionOptions } from "ai";
+import { createMCPClient } from "@ai-sdk/mcp";
+import { tool, type Tool, type ToolExecutionOptions } from "ai";
 import { z } from "zod";
 
 // ── Protocol meta ─────────────────────────────────────────────────────────────
@@ -24,46 +25,6 @@ function buildMeta() {
     idempotency_key: crypto.randomUUID(),
     request_id: crypto.randomUUID(),
   };
-}
-
-// ── Custom HTTP transport ─────────────────────────────────────────────────────
-// Implements the MCPTransport interface (duck-typed by the AI SDK) for
-// stateless JSON-RPC 2.0 over POST — no SSE stream required.
-
-type JSONRPCMessage = Record<string, unknown>;
-
-class HttpMcpTransport {
-  private readonly url: string;
-  private readonly headers: Record<string, string>;
-
-  onclose?: () => void;
-  onerror?: (error: Error) => void;
-  onmessage?: (message: JSONRPCMessage) => void;
-
-  constructor(url: string, headers: Record<string, string> = {}) {
-    this.url = url;
-    this.headers = headers;
-  }
-
-  async start(): Promise<void> {}
-
-  async send(message: JSONRPCMessage): Promise<void> {
-    try {
-      const res = await fetch(this.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...this.headers },
-        body: JSON.stringify(message),
-      });
-      // 204 = notification acknowledged (no body to deliver)
-      if (res.status === 204) return;
-      const json = (await res.json()) as JSONRPCMessage;
-      this.onmessage?.(json);
-    } catch (e) {
-      this.onerror?.(e instanceof Error ? e : new Error(String(e)));
-    }
-  }
-
-  async close(): Promise<void> {}
 }
 
 // ── ACP tool schemas (Claude-facing — meta omitted, injected at call time) ───
@@ -104,7 +65,7 @@ const paymentData = z.object({
 
 const ACP_TOOL_SCHEMAS = {
   create_checkout_session: {
-    parameters: z.object({
+    inputSchema: z.object({
       payload: z.object({
         line_items: z.array(lineItem).min(1).describe("Items to purchase (use product_id, not id)"),
         currency: z.string().default("usd").describe("ISO 4217 currency code"),
@@ -116,12 +77,12 @@ const ACP_TOOL_SCHEMAS = {
     }),
   },
   get_checkout_session: {
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe("Checkout session ID to retrieve"),
     }),
   },
   update_checkout_session: {
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe("Checkout session ID to update"),
       payload: z.object({
         buyer: buyer.optional(),
@@ -144,7 +105,7 @@ const ACP_TOOL_SCHEMAS = {
     }),
   },
   complete_checkout_session: {
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe("Checkout session ID to complete"),
       payload: z.object({
         payment_data: paymentData.describe("Payment token for the order"),
@@ -154,7 +115,7 @@ const ACP_TOOL_SCHEMAS = {
     }),
   },
   cancel_checkout_session: {
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe("Checkout session ID to cancel"),
       payload: z
         .object({
@@ -185,8 +146,12 @@ export async function createAcpMcpTools(): Promise<{
   const url = `${process.env.MERCHANT_API_URL}/api/mcp`;
   const key = process.env.MERCHANT_API_KEY ?? "";
 
-  const client = await experimental_createMCPClient({
-    transport: new HttpMcpTransport(url, { Authorization: `Bearer ${key}` }),
+  const client = await createMCPClient({
+    transport: {
+      type: "http",
+      url,
+      headers: { Authorization: `Bearer ${key}` },
+    },
   });
 
   // Get tools with our schema overrides — meta is NOT in these schemas so
@@ -194,9 +159,13 @@ export async function createAcpMcpTools(): Promise<{
   const mcpTools = await client.tools({ schemas: ACP_TOOL_SCHEMAS });
 
   // Wrap each tool's execute to inject protocol meta before the MCP call.
+  type LooseTool = {
+    description?: string;
+    parameters: z.ZodTypeAny;
+    execute: (a: unknown, o: ToolExecutionOptions) => Promise<unknown>;
+  };
   const tools: Record<string, Tool> = Object.fromEntries(
     Object.entries(mcpTools).map(([name, t]) => {
-      type LooseTool = { description?: string; parameters: z.ZodTypeAny; execute: (a: unknown, o: ToolExecutionOptions) => Promise<unknown> };
       const mcpTool = t as unknown as LooseTool;
       return [
         name,
