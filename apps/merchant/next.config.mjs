@@ -12,7 +12,7 @@ const config = {
           { key: "Access-Control-Allow-Methods", value: "GET, POST, OPTIONS" },
           {
             key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization, Idempotency-Key, Request-Id, API-Version",
+            value: "Content-Type, Authorization, Idempotency-Key, Request-Id, API-Version, Signature, Timestamp, Accept-Language",
           },
           { key: "Access-Control-Max-Age", value: "86400" },
         ],
